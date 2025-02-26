@@ -1,0 +1,3 @@
+/Users/bill/Documents/Projects/genetic image/build/CMakeFiles/ga_triangles.dir
+/Users/bill/Documents/Projects/genetic image/build/CMakeFiles/edit_cache.dir
+/Users/bill/Documents/Projects/genetic image/build/CMakeFiles/rebuild_cache.dir
