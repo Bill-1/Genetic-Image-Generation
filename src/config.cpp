@@ -1,7 +1,5 @@
 #include "config.h"
 
-std::vector<std::vector<bool>> visited;
-
 int HEIGHT = 100;
 int WIDTH = 100;    
 double initial_loss = 0;

@@ -2,6 +2,7 @@
 #include "genetic_algorithm.h"
 #include <filesystem>
 #include <iostream>
+#include <thread_pool.h>
 
 GeneticAlgorithm::GeneticAlgorithm(const Image &target) : target(target) {
     for (int i = 0; i < POPULATION_SIZE; i++) {
@@ -11,27 +12,30 @@ GeneticAlgorithm::GeneticAlgorithm(const Image &target) : target(target) {
 }
 
 void GeneticAlgorithm::run(int &itr) {
-    Individual *currBest = &population[0]; 
-    double currBestLoss = population[0].getLoss();
-   
+    size_t numThreads = std::thread::hardware_concurrency();
+    if (numThreads == 0) numThreads = 2;
+    ThreadPool pool(numThreads);
+
     for (int i = 0; i < POPULATION_SIZE; i++) {
-        population[i].mutate(target);
-        std::cout << i << "th mutated\n";
-        if (population[i].getLoss() < currBestLoss) {
-            currBestLoss = population[i].getLoss();
-            currBest = &population[i]; 
+        pool.enqueue([this, i](){
+            thread_local std::mt19937 local_gen(std::random_device{}());
+            population[i].mutate(target, local_gen);
+            std::cout << i << "th individual mutated\n";
+        });
+    }
+    
+    pool.wait();
+    
+    Individual *currBest = &population[0];
+    double currBestLoss = population[0].getLoss();
+    for (int i = 0; i < POPULATION_SIZE; i++) {
+        double loss = population[i].getLoss();
+        if (loss < currBestLoss) {
+            currBestLoss = loss;
+            currBest = &population[i];
         }
     }
-    std::cout << "Is this right?\n";
-    std::vector<Individual> children{POPULATION_SIZE};
-    for (int i = 0; i < POPULATION_SIZE; i++) {
-        Individual father = doTournamentSelection();
-        Individual mother = doTournamentSelection();
-        children[i] = breed(father, mother);
-    }
-    population = children;
-
-    std::cout << "Generation " << std::to_string(itr) << " is over with loss " << currBest->getLoss() << "\n"; 
+    std::cout << "Generation " << std::to_string(itr) << " is over with loss " << currBest->getLoss() << " with " << currBest->dna.size() << " triangles\n"; 
     if (itr % 10 == 0) {
         std::string filePath = "../assets/" + folderName + "/" + std::to_string(itr / 10) + ".png";
         Image best = currBest -> render(target);
@@ -41,6 +45,13 @@ void GeneticAlgorithm::run(int &itr) {
             std::cerr << "Failed to save output image.\n";
         }
     }
+    std::vector<Individual> children{POPULATION_SIZE};
+    for (int i = 0; i < POPULATION_SIZE; i++) {
+        Individual father = doTournamentSelection();
+        Individual mother = doTournamentSelection();
+        children[i] = breed(father, mother);
+    }
+    population = children;
 }
 
 void GeneticAlgorithm::getGeneticImage(std::string name) {
@@ -61,13 +72,13 @@ void GeneticAlgorithm::getGeneticImage(std::string name) {
 Individual GeneticAlgorithm::doTournamentSelection() {
     std::uniform_int_distribution<> pick(0, POPULATION_SIZE - 1);
     const Individual *best = nullptr;
-    double bestLoss = 1'000'000;
+    double bestLoss = 1'000'000'000;
     for (int i = 1; i <= TOURNAMENT_SIZE; i++) {
         int id = pick(gen);
         const Individual *candidate = &population[id];
         double candidateLoss = candidate -> getLoss();
         if (candidateLoss < bestLoss) {
-            candidateLoss = bestLoss;
+            bestLoss = candidateLoss;
             best = candidate;
         }
     }
@@ -91,6 +102,10 @@ Individual GeneticAlgorithm::breed(const Individual &parent1, const Individual &
     
     size_t minSize = smallParent->dna.size();
     std::uniform_int_distribution<> index(0, minSize - 1);
+    if (minSize == 0) {
+        std::cout << "Error\n";
+        exit(0);
+    }
     size_t pivot = index(gen);
    
     std::vector<Triangle> childDNA;

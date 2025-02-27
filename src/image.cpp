@@ -8,7 +8,7 @@
 
 Image::Image() : width(0), height(0) {}
 
-Image::Image(int h, int w) : height(h), width(w), pixels(h, std::vector<int> (w, (255 << 16) | (255 << 8) | 255)) {}
+Image::Image(int h, int w) : height(h), width(w), pixels(h, std::vector<int> (w, (255 << 16) | (255 << 8) | 255)), visited(h, std::vector<bool>(w, false)) {}
 
 Image Image::load(const std::string &filename) {
     int width, height, channels;
@@ -116,8 +116,8 @@ void Image::drawTriangle(const Image &target, Triangle &t, double &loss) {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 int X = xx[i] + top[0];
-                int Y = yy[i] + top[1];
-                if (X >= 0 && X < HEIGHT && Y >= 0 && Y < WIDTH && visited[X][Y] == false) {
+                int Y = yy[j] + top[1];
+                if (X >= 0 && X < HEIGHT && Y >= 0 && Y < WIDTH && visited[X][Y] == false && t.isIn({X, Y})) {
                     visited[X][Y] = true;
                     std::array<int, 2> next = {X, Y};
                     st.push(next);
@@ -170,8 +170,8 @@ double Image::tryDraw(const Image &target, Triangle &t, double &loss) {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 int X = xx[i] + top[0];
-                int Y = yy[i] + top[1];
-                if (X >= 0 && X < HEIGHT && Y >= 0 && Y < WIDTH && visited[X][Y] == false) {
+                int Y = yy[j] + top[1];
+                if (X >= 0 && X < HEIGHT && Y >= 0 && Y < WIDTH && visited[X][Y] == false && t.isIn({X, Y})) {
                     visited[X][Y] = true;
                     std::array<int, 2> next = {X, Y};
                     st.push(next);

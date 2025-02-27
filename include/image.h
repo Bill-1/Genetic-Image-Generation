@@ -27,6 +27,7 @@ private:
     int height;
     int width;
     std::vector<std::vector<int>> pixels;
+    std::vector<std::vector<bool>> visited;
 };
 
 #endif

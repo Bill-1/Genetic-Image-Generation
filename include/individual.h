@@ -12,7 +12,7 @@ public:
     Individual(std::vector<Triangle> &dna);
 
     double getLoss() const;
-    void mutate(const Image &target);
+    void mutate(const Image &target, std::mt19937 &gen);
 
     Image render(const Image &target);
 private:

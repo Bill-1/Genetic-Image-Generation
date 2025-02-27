@@ -14,12 +14,12 @@ struct Triangle {
     int color;
     bool active;
 
-    Triangle(int h, int w);
+    Triangle(std::mt19937 &gen, int h, int w, double rate);
     Triangle(std::array<int, 2> &p1, std::array<int, 2> &p2, std::array<int, 2> &p3);
 
-    void mutate(const Image &target, Image &im, double &loss);
+    void mutate(const Image &target, Image &im, double &loss, std::mt19937 &gen);
 
-    bool isIn(std::array<int, 2> &point);
+    bool isIn(std::array<int, 2> point);
 
     int getArea();
 };
