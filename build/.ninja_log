@@ -1,0 +1,9 @@
+# ninja log v5
+15	952	1740653950187716541	CMakeFiles/ga_triangles.dir/src/triangle.cpp.o	d9d5bdaadadd0e7d
+13	898	1740653950131389116	CMakeFiles/ga_triangles.dir/src/config.cpp.o	e55331ee26a7df9b
+14	1025	1740653950262966333	CMakeFiles/ga_triangles.dir/src/main.cpp.o	a40e0099f6284a8e
+14	1016	1740653950253649381	CMakeFiles/ga_triangles.dir/src/individual.cpp.o	205547db2096d429
+1144	1238	1740655395372792259	ga_triangles	cfd252284730190b
+10	1144	1740655395272118857	CMakeFiles/ga_triangles.dir/src/genetic_algorithm.cpp.o	631939fd53025b3b
+10	967	1740655395092846253	CMakeFiles/ga_triangles.dir/src/thread_pool.cpp.o	9aa60c6b743ee906
+9	1388	1740654869155524178	CMakeFiles/ga_triangles.dir/src/image.cpp.o	626e7e013c5c6806
