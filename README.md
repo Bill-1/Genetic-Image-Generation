@@ -47,7 +47,7 @@ I would like to thank Sebastian Proost's work for the mutation mechanism in this
 
 ## Optimization
 
-This project employs several performance optimizations to address the computational intensity of the image genetic algorithm. Multithreading is used to accelerate the evaluation of candidate solutions, allowing multiple processes to run concurrently and significantly reducing overall runtime. Additionally, the initial approach for rendering triangles relied on flood-filling, which proved to be slow. Switching to a scanline algorithm has provided a more efficient drawing alternative, improving rendering speed considerably. Also, the training process leverages serialization and deserialization to persist and restore the state of the algorithm. This mechanism enables training sessions to be paused and resumed from saved checkpoints.
+This project employs several performance optimizations to address the computational intensity of the image genetic algorithm. Multithreading is used to accelerate the evaluation of candidate solutions, significantly reducing overall runtime. Additionally, the initial approach for rendering triangles relied on flood-filling, which proved to be slow. Switching to a scanline algorithm has provided a more efficient drawing alternative. Also, the training process leverages serialization and deserialization to persist and restore the state of the algorithm. This mechanism enables training sessions to be paused and resumed from saved checkpoints.
 
 
 
