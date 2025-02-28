@@ -1,4 +1,5 @@
 #include "image.h"
+#include "point.h"
 #include <iostream>
 #include <stack>
 #define STB_IMAGE_IMPLEMENTATION
@@ -67,160 +68,80 @@ void Image::setPixel(int x, int y, int value) {
     pixels[x][y] = value;
 }
 
-void Image::drawTriangle(const Image &target, Triangle &t, double &loss) {
-    std::vector<std::array<int, 2>> nodes;
-    std::stack<std::array<int, 2>> st;
-    nodes.push_back(t.v1);
-    nodes.push_back(t.v2);
-    nodes.push_back(t.v3);
-    st.push(t.v1);
-    st.push(t.v2);
-    st.push(t.v3);
-    visited[t.v1[0]][t.v1[1]] = true;
-    visited[t.v2[0]][t.v2[1]] = true;
-    visited[t.v3[0]][t.v3[1]] = true;
-
-    int xx[] = {-1, 0, 1};
-    int yy[] = {-1, 0, 1};
-    while (!st.empty()) {
-        std::array<int, 2> top = st.top();
-        st.pop();
-        int &color = pixels[top[0]][top[1]];
-        int red = (color >> 16) & 0xFF;
-        int green = (color >> 8) & 0xFF;
-        int blue = color & 0xFF;
-
-        int t_color = t.color;
-        int currRed = (t_color >> 16) & 0xFF;
-        int currGreen = (t_color >> 8) & 0xFF;
-        int currBlue = t_color & 0xFF;
-
-        const int &targetColor = target.getPixel(top[0], top[1]);
-        int redTarget = (targetColor >> 16) & 0xFF;
-        int greenTarget = (targetColor >> 8) & 0xFF;
-        int blueTarget = targetColor & 0xFF;
-
-        loss -= ((redTarget - red) * (redTarget - red));
-        loss -= ((greenTarget - green) * (greenTarget - green));
-        loss -= ((blueTarget - blue) * (blueTarget - blue));
-
-        red = (currRed * 127 + red * 128) / 255;
-        green = (currGreen * 127 + green * 128) / 255;
-        blue = (currBlue * 127 + blue * 128) / 255;
-
-        loss += ((redTarget - red) * (redTarget - red));
-        loss += ((greenTarget - green) * (greenTarget - green));
-        loss += ((blueTarget - blue) * (blueTarget - blue));
-
-        color = (red << 16) | (green << 8) | blue;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                int X = xx[i] + top[0];
-                int Y = yy[j] + top[1];
-                if (X >= 0 && X < HEIGHT && Y >= 0 && Y < WIDTH && visited[X][Y] == false && t.isIn({X, Y})) {
-                    visited[X][Y] = true;
-                    std::array<int, 2> next = {X, Y};
-                    st.push(next);
-                    nodes.push_back(next);
-                }
-            }
-        }
-    }
-
-    for (std::array<int, 2> node : nodes) {
-        visited[node[0]][node[1]] = false;
-    }
-
+inline int clamp(int value, int minVal, int maxVal) {
+    return std::max(minVal, std::min(value, maxVal));
 }
 
-double Image::tryDraw(const Image &target, Triangle &t, double &loss, std::mt19937 &gen) {
-    double curr = loss;
-    // long long c1_r = 0, c2_r = 0, c1_g = 0, c2_g = 0, c1_b = 0, c2_b = 0;
-    std::vector<std::array<int, 2>> nodes;
-    std::stack<std::array<int, 2>> st;
-    nodes.push_back(t.v1);
-    nodes.push_back(t.v2);
-    nodes.push_back(t.v3);
-    st.push(t.v1);
-    st.push(t.v2);
-    st.push(t.v3);
-    visited[t.v1[0]][t.v1[1]] = true;
-    visited[t.v2[0]][t.v2[1]] = true;
-    visited[t.v3[0]][t.v3[1]] = true;
+void Image::drawTriangle(const Image &target, Triangle &t, double &loss) {
+    int x1 = clamp(t.v1[0], 0, HEIGHT - 1);
+    int y1 = clamp(t.v1[1], 0, WIDTH - 1);
+    int x2 = clamp(t.v2[0], 0, HEIGHT - 1);
+    int y2 = clamp(t.v2[1], 0, WIDTH - 1);
+    int x3 = clamp(t.v3[0], 0, HEIGHT - 1);
+    int y3 = clamp(t.v3[1], 0, WIDTH - 1);
 
-    int xx[] = {-1, 0, 1};
-    int yy[] = {-1, 0, 1};
-    while (!st.empty()) {
-        std::array<int, 2> top = st.top();
-        st.pop();
-        int &color = pixels[top[0]][top[1]];
-        int red = (color >> 16) & 0xFF;
-        int green = (color >> 8) & 0xFF;
-        int blue = color & 0xFF;
-        const int &targetColor = target.getPixel(top[0], top[1]);
-        int redTarget = (targetColor >> 16) & 0xFF;
-        int greenTarget = (targetColor >> 8) & 0xFF;
-        int blueTarget = targetColor & 0xFF;
-        // c1_r += red;
-        // c2_r += (red - redTarget);
-        // c1_g += green;
-        // c2_g += (green - greenTarget);
-        // c1_b += blue;
-        // c2_b += (blue - blueTarget);
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                int X = xx[i] + top[0];
-                int Y = yy[j] + top[1];
-                if (X >= 0 && X < HEIGHT && Y >= 0 && Y < WIDTH && visited[X][Y] == false && t.isIn({X, Y})) {
-                    visited[X][Y] = true;
-                    std::array<int, 2> next = {X, Y};
-                    st.push(next);
-                    nodes.push_back(next);
-                }
-            }
+    struct Point { int x; int y; };
+    Point pts[3] = { {x1, y1}, {x2, y2}, {x3, y3} };
+
+    std::sort(pts, pts + 3, [](const Point &a, const Point &b) {
+        return a.x < b.x;
+    });
+
+    auto interpolate = [&](int x, const Point &p0, const Point &p1) -> int {
+        if (p1.x == p0.x)
+            return p0.y;
+        double t = (x - p0.x) / static_cast<double>(p1.x - p0.x);
+        return static_cast<int>(p0.y + t * (p1.y - p0.y) + 0.5);
+    };
+
+    int triAlpha = (t.color >> 24) & 0xFF;
+    double alphaFactor = triAlpha / 255.0;
+    int triR = (t.color >> 16) & 0xFF;
+    int triG = (t.color >> 8) & 0xFF;
+    int triB = t.color & 0xFF;
+
+    for (int x = pts[0].x; x <= pts[2].x; x++) {
+        if (x < 0 || x >= HEIGHT)
+            continue;
+
+        int ya, yb;
+        if (x < pts[1].x) {
+            ya = interpolate(x, pts[0], pts[1]);
+            yb = interpolate(x, pts[0], pts[2]);
+        } else {
+            ya = interpolate(x, pts[1], pts[2]);
+            yb = interpolate(x, pts[0], pts[2]);
+        }
+        if (ya > yb)
+            std::swap(ya, yb);
+        ya = clamp(ya, 0, WIDTH - 1);
+        yb = clamp(yb, 0, WIDTH - 1);
+
+        for (int y = ya; y <= yb; y++) {
+            int currentColor = pixels[x][y];
+            int currA = (currentColor >> 24) & 0xFF; 
+            int currR = (currentColor >> 16) & 0xFF;
+            int currG = (currentColor >> 8) & 0xFF;
+            int currB = currentColor & 0xFF;
+
+            int targetColor = target.getPixel(x, y);
+            int targR = (targetColor >> 16) & 0xFF;
+            int targG = (targetColor >> 8) & 0xFF;
+            int targB = targetColor & 0xFF;
+
+            double oldError = std::pow(targR - currR, 2) + std::pow(targG - currG, 2) + std::pow(targB - currB, 2);
+            loss -= oldError;
+
+            int newR = static_cast<int>(alphaFactor * triR + (1 - alphaFactor) * currR);
+            int newG = static_cast<int>(alphaFactor * triG + (1 - alphaFactor) * currG);
+            int newB = static_cast<int>(alphaFactor * triB + (1 - alphaFactor) * currB);
+
+            int newColor = (255 << 24) | (newR << 16) | (newG << 8) | newB;
+
+            pixels[x][y] = newColor;
+
+            double newError = std::pow(targR - newR, 2) + std::pow(targG - newG, 2) + std::pow(targB - newB, 2);
+            loss += newError;
         }
     }
-    // long long n = nodes.size();
-    // int idealRed = (int) ((c1_r * 127 - c2_r * 255) / (n * 127));
-    // int idealGreen = (int) ((c1_g * 127 - c2_g * 255) / (n * 127));
-    // int idealBlue = (int) ((c1_b * 127 - c2_b * 255) / (n * 127));
-    // idealRed = std::max(0, std::min(255, idealRed));
-    // idealGreen = std::max(0, std::min(255, idealGreen));
-    // idealBlue = std::max(0, std::min(255, idealBlue));
-    // std::cout << idealRed << " " << idealGreen << " " << idealBlue << "These are the ideal colors\n";
-    std::uniform_int_distribution<> tweak(-5, 5);
-    int currRed = (t.color >> 16) & 0xFF + tweak(gen);
-    int currGreen = (t.color >> 8) & (0xFF) + tweak(gen);
-    int currBlue = (t.color) & 0xFF + tweak(gen);
-    // int currRed = (t.color >> 16) & 0xFF;
-    // int currGreen = (t.color >> 8) & (0xFF);
-    // int currBlue = (t.color) & 0xFF;
-    // currRed = (idealRed - currRed) * 0.05 + currRed;
-    // currGreen = (idealGreen - currGreen) * 0.05 + currGreen;
-    // currBlue = (idealBlue - currBlue) * 0.05 + currBlue;
-    currRed = std::max(0, std::min(255, currRed));
-    currGreen = std::max(0, std::min(255, currGreen));
-    currBlue = std::max(0, std::min(255, currBlue));
-    t.color = ((currRed << 16) | (currGreen << 8) | currBlue);
-    for (std::array<int, 2> node : nodes) {
-        visited[node[0]][node[1]] = false;
-        int &color = pixels[node[0]][node[1]];
-        int red = (color >> 16) & 0xFF;
-        int green = (color >> 8) & 0xFF;
-        int blue = color & 0xFF;
-        const int &targetColor = target.getPixel(node[0], node[1]);
-        int redTarget = (targetColor >> 16) & 0xFF;
-        int greenTarget = (targetColor >> 8) & 0xFF;
-        int blueTarget = targetColor & 0xFF;
-        curr -= ((redTarget - red) * (redTarget - red));
-        curr -= ((greenTarget - green) * (greenTarget - green));
-        curr -= ((blueTarget - blue) * (blueTarget - blue));
-        red = (currRed * 127 + red * 128) / 255;
-        green = (currGreen * 127 + green * 128) / 255;
-        blue = (currBlue * 127 + blue * 128) / 255;
-        curr += ((redTarget - red) * (redTarget - red));
-        curr += ((greenTarget - green) * (greenTarget - green));
-        curr += ((blueTarget - blue) * (blueTarget - blue));
-    }
-    return curr;
 }

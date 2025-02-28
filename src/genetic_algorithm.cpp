@@ -34,7 +34,6 @@ void GeneticAlgorithm::save(const std::string& filename) {
                 out.write(reinterpret_cast<const char*>(tri.v2.data()), 2 * sizeof(int));
                 out.write(reinterpret_cast<const char*>(tri.v3.data()), 2 * sizeof(int));
                 out.write(reinterpret_cast<const char*>(&tri.color), sizeof(tri.color));
-                out.write(reinterpret_cast<const char*>(&tri.active), sizeof(tri.active));
             }
         }
     }
@@ -54,14 +53,12 @@ void GeneticAlgorithm::load(const std::string& filename) {
         return;
     }
 
-    // Read the iteration variable.
     in.read(reinterpret_cast<char*>(&itr), sizeof(itr));
     if (!in) {
         std::cerr << "[ERROR] Failed to read iteration variable." << std::endl;
         return;
     }
 
-    // Read the population size.
     size_t popSize = 0;
     in.read(reinterpret_cast<char*>(&popSize), sizeof(popSize));
     if (!in) {
@@ -73,9 +70,7 @@ void GeneticAlgorithm::load(const std::string& filename) {
     population.clear();
     population.resize(popSize);
 
-    // Loop over each Individual in the population.
     for (size_t i = 0; i < popSize; i++) {
-        // First, read the number of triangles for this individual.
         size_t numTriangles = 0;
         in.read(reinterpret_cast<char*>(&numTriangles), sizeof(numTriangles));
         if (!in) {
@@ -91,16 +86,10 @@ void GeneticAlgorithm::load(const std::string& filename) {
             std::array<int, 2> p2 = {0, 0};
             std::array<int, 2> p3 = {0, 0};
             Triangle tri(p1, p2, p3); 
-            // Read v1 (2 ints)
             in.read(reinterpret_cast<char*>(tri.v1.data()), 2 * sizeof(int));
-            // Read v2 (2 ints)
             in.read(reinterpret_cast<char*>(tri.v2.data()), 2 * sizeof(int));
-            // Read v3 (2 ints)
             in.read(reinterpret_cast<char*>(tri.v3.data()), 2 * sizeof(int));
-            // Read color (1 int)
             in.read(reinterpret_cast<char*>(&tri.color), sizeof(tri.color));
-            // Read active (1 bool)
-            in.read(reinterpret_cast<char*>(&tri.active), sizeof(tri.active));
 
             if (!in) {
                 std::cerr << "[ERROR] Failed to read triangle data for individual " << i << std::endl;
@@ -120,45 +109,28 @@ void GeneticAlgorithm::run(int &itr, double &prevLoss) {
     size_t numThreads = std::thread::hardware_concurrency();
     if (numThreads == 0) numThreads = 2;
     ThreadPool pool(numThreads);
-    // std::cout << itr << ' ' << "Is this fine?\n";
+    std::vector<std::pair<double, Individual*>> lossPopulation ;
     for (int i = 0; i < population.size(); i++) {
         pool.enqueue([this, i](){
             thread_local std::mt19937 local_gen(std::random_device{}());
-            population[i].mutate(target, local_gen);
-            std::cout << i << "th individual mutated\n";
+            population[i].mutate(local_gen);
+            population[i].render(target);
         });
     }
     
     pool.wait();
     
-    int elitismNum = 2;
-    std::vector<std::pair<double, Individual*>> lossPopulation ;
     for (int i = 0; i < POPULATION_SIZE; i++) {
         double loss = population[i].getLoss();
         lossPopulation.push_back({loss, &population[i]});
     }
     std::sort(lossPopulation.begin(), lossPopulation.end());
     Individual *currBest = lossPopulation[0].second;
-    if (currBest->getLoss() < prevLoss) {
-        MUTATION_RATE *= 0.97;
-        MUTATION_RATE = std::max(MUTATION_RATE, 0.05);
-        prevLoss = currBest->getLoss();
-    } else {
-        MUTATION_RATE *= 1.1;
-        MUTATION_RATE = std::min(MUTATION_RATE, 0.15);
-    }
-    // MUTATION_RATE = std::max(0.01, 0.2 * exp(-0.001 * itr));
-    MUTATION_RATE = std::min(MUTATION_RATE, 0.15);
 
     
-    std::cout << "Generation " << std::to_string(itr) << " is over with loss " << currBest->getLoss() << " with " << currBest->dna.size() << " triangles " << "and mutation rate " << MUTATION_RATE << '\n'; 
+    std::cout << "Generation " << std::to_string(itr) << " is over with loss " << currBest->getLoss() << " with " << currBest->dna.size() << " triangles\n"; 
 
     if (itr % 10 == 0) {
-        // Random immigations
-        for (int i = 0; i < POPULATION_SIZE / 20; i++) {
-            int randomIndex = rand() % POPULATION_SIZE;
-            population[randomIndex] = Individual(); 
-        }
         std::string filePath = "../assets/" + folderName + "/" + std::to_string(itr / 10) + ".png";
         Image best = currBest -> render(target);
         if (best.save(filePath)) {
@@ -168,10 +140,7 @@ void GeneticAlgorithm::run(int &itr, double &prevLoss) {
         }
     }
     std::vector<Individual> children{POPULATION_SIZE};
-    for (int i = 0; i < elitismNum; i++) {
-        children[i] = *lossPopulation[i].second;
-    }
-    for (int i = elitismNum; i < POPULATION_SIZE; i++) {
+    for (int i = 0; i < POPULATION_SIZE; i++) {
         Individual father = doTournamentSelection();
         Individual mother = doTournamentSelection();
         children[i] = breed(father, mother);
@@ -211,57 +180,23 @@ Individual GeneticAlgorithm::doTournamentSelection() {
 }
 
 Individual GeneticAlgorithm::breed(const Individual &parent1, const Individual &parent2) {
-    if (rand() % 2 == 0) {
-        std::vector<Triangle> childDNA;
-        size_t maxSize = std::max(parent1.dna.size(), parent2.dna.size());
-        for (size_t i = 0; i < maxSize; ++i) {
-            if (dis(gen) < 0.5) {
-                if (i < parent1.dna.size()) {
-                    childDNA.push_back(parent1.dna[i]);
-                } else {
-                    childDNA.push_back(parent2.dna[i]);
-                }
+    std::vector<Triangle> childDNA;
+    size_t maxSize = std::max(parent1.dna.size(), parent2.dna.size());
+    for (size_t i = 0; i < maxSize; ++i) {
+        if (dis(gen) < 0.5) {
+            if (i < parent1.dna.size()) {
+                childDNA.push_back(parent1.dna[i]);
             } else {
-                if (i < parent2.dna.size()) {
-                    childDNA.push_back(parent2.dna[i]);
-                } else {
-                    childDNA.push_back(parent1.dna[i]);
-                }
+                childDNA.push_back(parent2.dna[i]);
+            }
+        } else {
+            if (i < parent2.dna.size()) {
+                childDNA.push_back(parent2.dna[i]);
+            } else {
+                childDNA.push_back(parent1.dna[i]);
             }
         }
-        return Individual(childDNA);
-    } 
-    const Individual *smallParent;
-    const Individual *largeParent;
-    if (parent1.dna.size() <= parent2.dna.size()) {
-        smallParent = &parent1;
-        largeParent = &parent2;
-    } else {
-        smallParent = &parent2;
-        largeParent = &parent1;
     }
-    
-    if (smallParent->dna.empty()) {
-        return Individual(); 
-    }
-    
-    size_t minSize = smallParent->dna.size();
-    std::uniform_int_distribution<> index(0, minSize - 1);
-    if (minSize == 0) {
-        std::cout << "Error\n";
-        exit(0);
-    }
-    size_t pivot = index(gen);
-   
-    std::vector<Triangle> childDNA;
-    
-    for (size_t i = 0; i < pivot; ++i) {
-        childDNA.push_back(smallParent->dna[i]);
-    }
-    
-    for (size_t i = pivot; i < largeParent->dna.size(); ++i) {
-        childDNA.push_back(largeParent->dna[i]);
-    }
-    
     return Individual(childDNA);
+     
 }

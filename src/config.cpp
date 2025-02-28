@@ -3,7 +3,6 @@
 int HEIGHT = 100;
 int WIDTH = 100;    
 double initial_loss = 0;
-double MUTATION_RATE = 0.1;
 
 std::random_device rd;
 std::mt19937 gen(rd());

@@ -22,7 +22,6 @@ public:
     void setPixel(int x, int y, int color);
 
     void drawTriangle(const Image &target, Triangle &t, double &loss);
-    double tryDraw(const Image &target, Triangle &t, double &loss, std::mt19937 &gen);
 private:
     int height;
     int width;

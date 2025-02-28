@@ -17,30 +17,23 @@ double Individual::getLoss() const{
     return this -> loss;
 }
 
-void Individual::mutate(const Image &target, std::mt19937 &gen) {
-
-    double chance = dis(gen);
-    if (chance < STRUCTURE_RATE) {
+void Individual::mutate(std::mt19937 &gen) {
+    std::vector<Triangle> mutatedTriangles;
+    for (int i = 1; i <= POPULATION_SIZE * STRUCTURE_RATE; i++) {
         std::uniform_int_distribution<> rem(0, dna.size() - 1);
         int id = rem(gen);
-        dna[id] = Triangle(gen, HEIGHT, WIDTH, 1);
-    } 
-    Image im = Image(HEIGHT, WIDTH);
-    this -> loss = initial_loss;
-    for (int i = 0; i < dna.size(); i++) {
-        if (!dna[i].active) continue;
-        dna[i].mutate(target, im, loss, gen);
-        im.drawTriangle(target, dna[i], loss);
+        dna[id].mutate(gen);
+        mutatedTriangles.push_back(dna[id]);
     }
-    this -> loss = this -> loss / (3 * HEIGHT * WIDTH);
+    std::swap(mutatedTriangles[0], mutatedTriangles[1]);
 }
 
 Image Individual::render(const Image &target) {
     Image im = Image(HEIGHT, WIDTH);
-    double L = initial_loss;
+    loss = initial_loss;
     for (int i = 0; i < dna.size(); i++) {
-        if (!dna[i].active) continue;
-        im.drawTriangle(target, dna[i], L);
+        im.drawTriangle(target, dna[i], loss);
     }
+    loss /= (HEIGHT * WIDTH * 3);
     return im;
 }
