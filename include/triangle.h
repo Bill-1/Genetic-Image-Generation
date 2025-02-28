@@ -14,6 +14,7 @@ struct Triangle {
     int color;
     bool active;
 
+    Triangle();
     Triangle(std::mt19937 &gen, int h, int w, double rate);
     Triangle(std::array<int, 2> &p1, std::array<int, 2> &p2, std::array<int, 2> &p3);
 

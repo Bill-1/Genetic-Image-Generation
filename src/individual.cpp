@@ -21,12 +21,9 @@ void Individual::mutate(const Image &target, std::mt19937 &gen) {
 
     double chance = dis(gen);
     if (chance < STRUCTURE_RATE) {
-        dna.push_back(Triangle(gen, HEIGHT, WIDTH, loss / (initial_loss / (HEIGHT * WIDTH * 3))));
-    } else if (chance > (1 - STRUCTURE_RATE)) {
         std::uniform_int_distribution<> rem(0, dna.size() - 1);
         int id = rem(gen);
-        while (!dna[id].active) id = rem(gen);
-        dna[id].active = false;
+        dna[id] = Triangle(gen, HEIGHT, WIDTH, 1);
     } 
     Image im = Image(HEIGHT, WIDTH);
     this -> loss = initial_loss;

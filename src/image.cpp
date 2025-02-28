@@ -104,9 +104,9 @@ void Image::drawTriangle(const Image &target, Triangle &t, double &loss) {
         loss -= ((greenTarget - green) * (greenTarget - green));
         loss -= ((blueTarget - blue) * (blueTarget - blue));
 
-        red = (currRed * 100 + red * 155) / 255;
-        green = (currGreen * 100 + green * 155) / 255;
-        blue = (currBlue * 100 + blue * 155) / 255;
+        red = (currRed * 127 + red * 128) / 255;
+        green = (currGreen * 127 + green * 128) / 255;
+        blue = (currBlue * 127 + blue * 128) / 255;
 
         loss += ((redTarget - red) * (redTarget - red));
         loss += ((greenTarget - green) * (greenTarget - green));
@@ -133,9 +133,9 @@ void Image::drawTriangle(const Image &target, Triangle &t, double &loss) {
 
 }
 
-double Image::tryDraw(const Image &target, Triangle &t, double &loss) {
+double Image::tryDraw(const Image &target, Triangle &t, double &loss, std::mt19937 &gen) {
     double curr = loss;
-    long long c1_r = 0, c2_r = 0, c1_g = 0, c2_g = 0, c1_b = 0, c2_b = 0;
+    // long long c1_r = 0, c2_r = 0, c1_g = 0, c2_g = 0, c1_b = 0, c2_b = 0;
     std::vector<std::array<int, 2>> nodes;
     std::stack<std::array<int, 2>> st;
     nodes.push_back(t.v1);
@@ -161,12 +161,12 @@ double Image::tryDraw(const Image &target, Triangle &t, double &loss) {
         int redTarget = (targetColor >> 16) & 0xFF;
         int greenTarget = (targetColor >> 8) & 0xFF;
         int blueTarget = targetColor & 0xFF;
-        c1_r += red;
-        c2_r += (red - redTarget);
-        c1_g += green;
-        c2_g += (green - greenTarget);
-        c1_b += blue;
-        c2_b += (blue - blueTarget);
+        // c1_r += red;
+        // c2_r += (red - redTarget);
+        // c1_g += green;
+        // c2_g += (green - greenTarget);
+        // c1_b += blue;
+        // c2_b += (blue - blueTarget);
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 int X = xx[i] + top[0];
@@ -180,19 +180,24 @@ double Image::tryDraw(const Image &target, Triangle &t, double &loss) {
             }
         }
     }
-    long long n = nodes.size();
-    int idealRed = (int) ((c1_r * 100 - c2_r * 255) / (n * 100));
-    int idealGreen = (int) ((c1_g * 100 - c2_g * 255) / (n * 100));
-    int idealBlue = (int) ((c1_b * 100 - c2_b * 255) / (n * 100));
-    idealRed = std::max(0, std::min(255, idealRed));
-    idealGreen = std::max(0, std::min(255, idealGreen));
-    idealBlue = std::max(0, std::min(255, idealBlue));
-    int currRed = (t.color >> 16) & 0xFF;
-    int currGreen = (t.color >> 8) & (0xFF);
-    int currBlue = (t.color) & 0xFF;
-    currRed = (idealRed - currRed) * 0.05 + currRed;
-    currGreen = (idealGreen - currGreen) * 0.05 + currGreen;
-    currBlue = (idealBlue - currBlue) * 0.05 + currBlue;
+    // long long n = nodes.size();
+    // int idealRed = (int) ((c1_r * 127 - c2_r * 255) / (n * 127));
+    // int idealGreen = (int) ((c1_g * 127 - c2_g * 255) / (n * 127));
+    // int idealBlue = (int) ((c1_b * 127 - c2_b * 255) / (n * 127));
+    // idealRed = std::max(0, std::min(255, idealRed));
+    // idealGreen = std::max(0, std::min(255, idealGreen));
+    // idealBlue = std::max(0, std::min(255, idealBlue));
+    // std::cout << idealRed << " " << idealGreen << " " << idealBlue << "These are the ideal colors\n";
+    std::uniform_int_distribution<> tweak(-5, 5);
+    int currRed = (t.color >> 16) & 0xFF + tweak(gen);
+    int currGreen = (t.color >> 8) & (0xFF) + tweak(gen);
+    int currBlue = (t.color) & 0xFF + tweak(gen);
+    // int currRed = (t.color >> 16) & 0xFF;
+    // int currGreen = (t.color >> 8) & (0xFF);
+    // int currBlue = (t.color) & 0xFF;
+    // currRed = (idealRed - currRed) * 0.05 + currRed;
+    // currGreen = (idealGreen - currGreen) * 0.05 + currGreen;
+    // currBlue = (idealBlue - currBlue) * 0.05 + currBlue;
     currRed = std::max(0, std::min(255, currRed));
     currGreen = std::max(0, std::min(255, currGreen));
     currBlue = std::max(0, std::min(255, currBlue));
@@ -210,9 +215,9 @@ double Image::tryDraw(const Image &target, Triangle &t, double &loss) {
         curr -= ((redTarget - red) * (redTarget - red));
         curr -= ((greenTarget - green) * (greenTarget - green));
         curr -= ((blueTarget - blue) * (blueTarget - blue));
-        red = (currRed * 100 + red * 155) / 255;
-        green = (currGreen * 100 + green * 155) / 255;
-        blue = (currBlue * 100 + blue * 155) / 255;
+        red = (currRed * 127 + red * 128) / 255;
+        green = (currGreen * 127 + green * 128) / 255;
+        blue = (currBlue * 127 + blue * 128) / 255;
         curr += ((redTarget - red) * (redTarget - red));
         curr += ((greenTarget - green) * (greenTarget - green));
         curr += ((blueTarget - blue) * (blueTarget - blue));
