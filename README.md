@@ -4,6 +4,8 @@
 
 This project implements a genetic algorithm designed to evolve images towards a target image. By simulating the process of natural selection, the algorithm iteratively improves a population of images, minimizing the difference between each generated image and the desired target.
 
+## "The Starry Night" after 2500 generations
+![alt text](https://github.com/Bill-1/Genetic-Image-Generation/blob/main/assets/night/250.png)
 ## Features
 
 - **Customizable Parameters**: Adjust population size, chromosome number, mutation rates, and other variables to observe different evolutionary outcomes. These variables can be found in the config.h file.
