@@ -15,11 +15,11 @@ This project implements a genetic algorithm designed to evolve images towards a 
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/image-genetic-algorithm.git
+   git clone https://github.com/Bill-1/Genetic-Image-Generation.git
 
 2. **Navigate to the Project Directory**:
    ```bash
-   cd image-genetic-algorithm 
+   cd Genetic-Image-Generation
 3. **Make a build directory for CMake and navigate to it**:
    ```bash
    mkdir build && cd build
